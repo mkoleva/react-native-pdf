@@ -8,7 +8,7 @@
 
 'use strict';
 import React, {Component} from 'react';
-import {FlatList, View} from 'react-native';
+import {ListView, View} from 'react-native';
 
 import PropTypes from 'prop-types';
 
@@ -188,7 +188,7 @@ export default class PdfView extends Component {
         newScale = newScale < 1 ? 1 : newScale;
 
         if (this.flatList && this.state.contentOffset) {
-            this.flatList.scrollToOffset({
+            this.flatList.scrollTo({
                 animated: false,
                 offset: (this.props.horizontal ? this.state.contentOffset.x : this.state.contentOffset.y) * scale
             });
@@ -206,7 +206,8 @@ export default class PdfView extends Component {
 
     };
 
-    _renderItem = ({item, index}) => {
+    _renderItem = (item, sectionId, rowId) => {
+        const index = rowId;
 
         return (
             <DoubleTapView style={{flexDirection: this.props.horizontal ? 'row' : 'column'}}
@@ -246,23 +247,29 @@ export default class PdfView extends Component {
         if (this.state.page !== this.props.page) {
             this.timer = setTimeout(() => {
                 if (this.flatList) {
-                    this.flatList.scrollToIndex({animated: true, index: (this.props.page - 1)});
+                    this.flatList.scrollTo({
+                        animated: true,
+                        offset: ((this.props.horizontal ? this._getPageWidth() : this._getPageHeight()) + this.props.spacing*this.state.scale) * (this.props.page - 1)
+                    });
                     this.state.page = this.props.page;
                 }
             }, 200);
         }
 
+        const dataView = new ListView.DataSource({
+                rowHasChanged: (r1, r2) => r1 !== r2})
+        const dataSource = dataView.cloneWithRows(data);
         return (
-            <FlatList
+            <ListView
                 ref={(ref) => {
                     this.flatList = ref;
                 }}
                 style={this.props.style}
                 contentContainerStyle={this.props.horizontal ? {height: this.state.contentContainerSize.height * this.state.scale} : {width: this.state.contentContainerSize.width * this.state.scale}}
                 horizontal={this.props.horizontal}
-                data={data}
-                renderItem={this._renderItem}
-                keyExtractor={this._keyExtractor}
+                dataSource={dataSource}
+                renderRow={this._renderItem}
+                key={'somesecretstuff'}
                 windowSize={11}
                 getItemLayout={(data, index) => ({
                     length: this.props.horizontal ? this._getPageWidth() : this._getPageHeight(),
