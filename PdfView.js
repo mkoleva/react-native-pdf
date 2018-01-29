@@ -188,9 +188,10 @@ export default class PdfView extends Component {
         newScale = newScale < 1 ? 1 : newScale;
 
         if (this.flatList && this.state.contentOffset) {
+            const coord_offset = this._get_offset_map(scale);
             this.flatList.scrollTo({
                 animated: false,
-                offset: (this.props.horizontal ? this.state.contentOffset.x : this.state.contentOffset.y) * scale
+                ...coord_offset
             });
         }
 
@@ -204,6 +205,12 @@ export default class PdfView extends Component {
             }, 1000);
         }
 
+    };
+
+    _get_offset_map = (scale) =>{
+        const newOffset = (
+            this.props.horizontal ? this.state.contentOffset.x : this.state.contentOffset.y) * scale;
+        return this.props.horizontal ? {x: newOffset} : {y: newOffset};
     };
 
     _renderItem = (item, sectionId, rowId) => {
@@ -236,6 +243,12 @@ export default class PdfView extends Component {
 
     };
 
+    _get_paged_offset_map = () =>{
+        const newOffset = ((this.props.horizontal ? this._getPageWidth() : this._getPageHeight())
+                        + this.props.spacing * this.state.scale) * (this.props.page - 1);
+        return this.props.horizontal ? {x: newOffset} : {y: newOffset};
+    };
+
 
     _renderList = () => {
 
@@ -247,17 +260,17 @@ export default class PdfView extends Component {
         if (this.state.page !== this.props.page) {
             this.timer = setTimeout(() => {
                 if (this.flatList) {
+                    const coordinates = this._get_paged_offset_map();
                     this.flatList.scrollTo({
                         animated: true,
-                        offset: ((this.props.horizontal ? this._getPageWidth() : this._getPageHeight()) + this.props.spacing*this.state.scale) * (this.props.page - 1)
+                        ...coordinates
                     });
                     this.state.page = this.props.page;
                 }
             }, 200);
         }
-
         const dataView = new ListView.DataSource({
-                rowHasChanged: (r1, r2) => r1 !== r2})
+                rowHasChanged: (r1, r2) => r1 !== r2});
         const dataSource = dataView.cloneWithRows(data);
         return (
             <ListView
